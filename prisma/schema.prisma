@@ -6,31 +6,22 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─── Better Auth Required Models ─────────────────────────────────────────────
-
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String         @unique
+  emailVerified Boolean        @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // CMS-specific
-  role          Role      @default(EDITOR)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  role          Role           @default(EDITOR)
   bio           String?
-
-  sessions      Session[]
   accounts      Account[]
-
-  // Content relations
-  posts         Post[]
-  pages         Page[]
   mediaFiles    MediaFile[]
-
-  // Notifications
   notifications Notification[]
+  pages         Page[]
+  posts         Post[]
+  sessions      Session[]
 
   @@map("users")
 }
@@ -54,7 +45,6 @@ model Account {
   accountId             String
   providerId            String
   userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
@@ -64,6 +54,7 @@ model Account {
   password              String?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("accounts")
 }
@@ -79,7 +70,139 @@ model Verification {
   @@map("verifications")
 }
 
-// ─── CMS Models ──────────────────────────────────────────────────────────────
+model Post {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  excerpt     String?
+  content     String
+  coverImage  String?
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String
+  categoryId  String?
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category    Category?  @relation(fields: [categoryId], references: [id])
+  tags        Tag[]      @relation("PostToTag")
+
+  @@map("posts")
+}
+
+model Page {
+  id          String     @id @default(cuid())
+  title       String
+  slug        String     @unique
+  content     String
+  metaTitle   String?
+  metaDesc    String?
+  status      PageStatus @default(DRAFT)
+  publishedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  authorId    String
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("pages")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  posts     Post[]   @relation("PostToTag")
+
+  @@map("tags")
+}
+
+model MediaFile {
+  id           String   @id @default(cuid())
+  name         String
+  originalName String
+  url          String
+  type         String
+  size         Int
+  mimeType     String
+  alt          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@map("media_files")
+}
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  linkUrl   String?
+  linkText  String?
+  position  String   @default("hero")
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("banners")
+}
+
+model Menu {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  location  String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     MenuItem[]
+
+  @@map("menus")
+}
+
+model MenuItem {
+  id        String     @id @default(cuid())
+  label     String
+  url       String
+  target    String     @default("_self")
+  order     Int        @default(0)
+  parentId  String?
+  menuId    String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  menu      Menu       @relation(fields: [menuId], references: [id], onDelete: Cascade)
+  parent    MenuItem?  @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children  MenuItem[] @relation("MenuItemChildren")
+
+  @@map("menu_items")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  link      String?
+  createdAt DateTime         @default(now())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
 
 enum Role {
   ADMIN
@@ -98,138 +221,6 @@ enum PageStatus {
   ARCHIVED
 }
 
-model Post {
-  id          String     @id @default(cuid())
-  title       String
-  slug        String     @unique
-  excerpt     String?
-  content     String     @db.Text
-  coverImage  String?
-  status      PostStatus @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  categoryId  String?
-  category    Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
-  tags        Tag[]
-
-  @@map("posts")
-}
-
-model Page {
-  id          String     @id @default(cuid())
-  title       String
-  slug        String     @unique
-  content     String     @db.Text
-  metaTitle   String?
-  metaDesc    String?
-  status      PageStatus @default(DRAFT)
-  publishedAt DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-
-  authorId    String
-  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@map("pages")
-}
-
-model Category {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  posts       Post[]
-
-  @@map("categories")
-}
-
-model Tag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  createdAt DateTime @default(now())
-
-  posts     Post[]
-
-  @@map("tags")
-}
-
-model MediaFile {
-  id          String   @id @default(cuid())
-  name        String
-  originalName String
-  url         String
-  type        String
-  size        Int
-  mimeType    String
-  alt         String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  uploadedById String
-  uploadedBy   User   @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
-
-  @@map("media_files")
-}
-
-model Banner {
-  id          String   @id @default(cuid())
-  title       String
-  subtitle    String?
-  imageUrl    String
-  linkUrl     String?
-  linkText    String?
-  position    String   @default("hero")
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("banners")
-}
-
-model Menu {
-  id        String     @id @default(cuid())
-  name      String     @unique
-  location  String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  items     MenuItem[]
-
-  @@map("menus")
-}
-
-model MenuItem {
-  id         String    @id @default(cuid())
-  label      String
-  url        String
-  target     String    @default("_self")
-  order      Int       @default(0)
-  parentId   String?
-  parent     MenuItem? @relation("MenuItemChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  children   MenuItem[] @relation("MenuItemChildren")
-
-  menuId     String
-  menu       Menu      @relation(fields: [menuId], references: [id], onDelete: Cascade)
-
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-
-  @@map("menu_items")
-}
-
-// ─── Notifications ────────────────────────────────────────────────────────────
-
 enum NotificationType {
   POST_CREATED
   POST_UPDATED
@@ -238,19 +229,4 @@ enum NotificationType {
   PAGE_UPDATED
   USER_JOINED
   MEDIA_UPLOADED
-}
-
-model Notification {
-  id        String           @id @default(cuid())
-  type      NotificationType
-  title     String
-  message   String
-  read      Boolean          @default(false)
-  link      String?
-  createdAt DateTime         @default(now())
-
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("notifications")
 }

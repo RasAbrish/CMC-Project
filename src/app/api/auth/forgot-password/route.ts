@@ -31,13 +31,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Create a reset token valid for 1 hour
+        // Create a reset token compatible with Better Auth
         const token = randomBytes(32).toString("hex");
         const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
         await prisma.verification.create({
             data: {
-                identifier: `reset:${email}`,
+                identifier: "password-reset",
                 value: token,
                 expiresAt,
             },
