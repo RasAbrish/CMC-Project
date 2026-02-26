@@ -9,6 +9,9 @@
     "lint": "eslint",
     "postinstall": "prisma generate"
   },
+  "prisma": {
+    "seed": "npx tsx -r dotenv/config prisma/seed.ts"
+  },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
     "@neondatabase/serverless": "^0.10.4",

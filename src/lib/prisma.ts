@@ -1,6 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import { neonConfig } from "@neondatabase/serverless";
 import { PrismaNeon } from "@prisma/adapter-neon";
+import { Pool as PgPool } from "pg";
+import { PrismaPg } from "@prisma/adapter-pg";
 import ws from "ws";
 
 if (typeof window === "undefined") {
@@ -13,7 +15,14 @@ if (!connectionString) {
     throw new Error("DATABASE_URL is not defined");
 }
 
-const adapter = new PrismaNeon({ connectionString });
+let adapter: any;
+// Use neon adapter for production Neon endpoint, otherwise use standard pg adapter
+if (connectionString.includes("neon.tech")) {
+    adapter = new PrismaNeon({ connectionString });
+} else {
+    const pool = new PgPool({ connectionString });
+    adapter = new PrismaPg(pool);
+}
 
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
