@@ -91,7 +91,7 @@ export default async function PostPreview({
 
       {post.tags.length > 0 && (
         <div style={{ marginTop: "40px", paddingTop: "24px", borderTop: "1px solid var(--border-secondary, #eee)", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          {post.tags.map(tag => (
+          {post.tags.map((tag: { id: string; name: string; slug: string; createdAt: Date }) => (
             <span key={tag.id} style={{
               background: "var(--bg-tertiary, #f0f0f0)",
               color: "var(--text-secondary, #444)",
