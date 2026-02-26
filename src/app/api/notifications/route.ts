@@ -17,6 +17,7 @@ export async function GET() {
 
         const unread = notifications.filter((n: any) => !n.read).length;
 
+
         return NextResponse.json({ notifications, unread });
     } catch (error) {
         console.error(error);
