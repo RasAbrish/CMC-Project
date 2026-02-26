@@ -15,30 +15,38 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
         }
 
-        // We use the Better Auth resetPassword API which handles:
-        // 1. Verification token lookup & validation
-        // 2. Password hashing (using its internal correct format)
-        // 3. Updating the user's credential
-        // 4. Deleting the token
-        try {
-            await auth.api.resetPassword({
-                body: {
-                    newPassword: password,
-                    token: token,
-                },
-            });
-        } catch (authError: any) {
-            return NextResponse.json(
-                { error: authError.message || "Invalid or expired reset link" },
-                { status: 400 }
-            );
+        // 1. Manually verify the token
+        const verification = await prisma.verification.findFirst({
+            where: {
+                identifier: email,
+                value: token,
+                expiresAt: { gt: new Date() },
+            },
+        });
+
+        if (!verification) {
+            return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
         }
 
-        // Invalidate all sessions for security
+        // 2. Update the password using Better Auth's setPassword API
+        // This ensures the new password is hashed exactly as Better Auth expects
         const user = await prisma.user.findUnique({ where: { email } });
-        if (user) {
-            await prisma.session.deleteMany({ where: { userId: user.id } });
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
+
+        await auth.api.setPassword({
+            body: {
+                userId: user.id,
+                newPassword: password,
+            },
+        });
+
+        // 3. Invalidate all sessions for security
+        await prisma.session.deleteMany({ where: { userId: user.id } });
+
+        // 4. Delete the used verification token
+        await prisma.verification.delete({ where: { id: verification.id } });
 
         return NextResponse.json({ success: true });
     } catch (error) {
