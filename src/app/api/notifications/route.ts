@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { Notification } from "@prisma/client";
 
 // GET /api/notifications — list notifications for current user
 export async function GET() {
@@ -16,7 +15,7 @@ export async function GET() {
             take: 30,
         });
 
-        const unread = notifications.filter((n: Notification) => !n.read).length;
+        const unread = notifications.filter((n: any) => !n.read).length;
 
         return NextResponse.json({ notifications, unread });
     } catch (error) {
