@@ -30,13 +30,12 @@ export async function broadcastNotification({
 }: CreateNotificationOptions) {
     try {
         const allUsers = await prisma.user.findMany({ select: { id: true } });
-        // Everyone gets notified (admins always)
-        const recipients = allUsers.filter((u) => u.id !== actorId);
 
-        if (recipients.length === 0) return;
+        // Ensure we actually have users to notify
+        if (allUsers.length === 0) return;
 
         await prisma.notification.createMany({
-            data: recipients.map((u) => ({
+            data: allUsers.map((u) => ({
                 userId: u.id,
                 type,
                 title,

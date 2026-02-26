@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
+import { broadcastNotification } from "@/lib/notifications";
 
 cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -102,6 +103,14 @@ export async function POST(req: NextRequest) {
                 mimeType: file.type,
                 uploadedById: (session.user as any).id,
             },
+        });
+
+        await broadcastNotification({
+            actorId: (session.user as any).id,
+            type: "MEDIA_UPLOADED",
+            title: "New Media Uploaded",
+            message: `${session.user.name} uploaded a new file: "${mediaFile.originalName}"`,
+            link: `/dashboard/media`,
         });
 
         return NextResponse.json(mediaFile, { status: 201 });

@@ -31,13 +31,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: true });
         }
 
-        // Create a reset token compatible with Better Auth's resetPassword API
         const token = randomBytes(32).toString("hex");
-        const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-        // Better Auth expects:
-        // identifier: "reset-password:${token}"
-        // value: userId
         await prisma.verification.create({
             data: {
                 identifier: `reset-password:${token}`,

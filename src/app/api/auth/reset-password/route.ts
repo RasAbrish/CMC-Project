@@ -15,12 +15,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
         }
 
-        // We use the Better Auth resetPassword API which handles:
-        // 1. Verification token lookup (using identifier: reset-password:${token})
-        // 2. Token expiration and validation
-        // 3. Password hashing (correct format for login)
-        // 4. Updating the credential
-        // 5. Deleting the token
         try {
             await auth.api.resetPassword({
                 body: {
@@ -36,7 +30,6 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Invalidate all sessions for security
         const user = await prisma.user.findUnique({ where: { email } });
         if (user) {
             await prisma.session.deleteMany({ where: { userId: user.id } });

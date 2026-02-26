@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { pageSchema } from "@/lib/validations";
 import { headers } from "next/headers";
+import { broadcastNotification } from "@/lib/notifications";
 
 export async function GET(req: NextRequest) {
     try {
@@ -42,6 +43,14 @@ export async function POST(req: NextRequest) {
                 authorId: session.user.id,
             },
             include: { author: true },
+        });
+
+        await broadcastNotification({
+            actorId: session.user.id,
+            type: "PAGE_CREATED",
+            title: "New Page Created",
+            message: `${session.user.name} created a new page: "${page.title}"`,
+            link: `/dashboard/pages/${page.id}`,
         });
 
         return NextResponse.json(page, { status: 201 });

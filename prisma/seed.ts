@@ -12,10 +12,8 @@ async function main() {
     });
 
     if (!existingAdmin) {
-        // Hash the password exactly as Better Auth expects
         const hashedPassword = await hashPassword(adminPassword);
 
-        // Create the user and their credential account natively
         await prisma.user.create({
             data: {
                 email: adminEmail,
