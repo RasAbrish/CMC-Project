@@ -15,38 +15,32 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
         }
 
-        // 1. Manually verify the token
-        const verification = await prisma.verification.findFirst({
-            where: {
-                identifier: email,
-                value: token,
-                expiresAt: { gt: new Date() },
-            },
-        });
-
-        if (!verification) {
-            return NextResponse.json({ error: "Invalid or expired reset link" }, { status: 400 });
+        // We use the Better Auth resetPassword API which handles:
+        // 1. Verification token lookup (using identifier: reset-password:${token})
+        // 2. Token expiration and validation
+        // 3. Password hashing (correct format for login)
+        // 4. Updating the credential
+        // 5. Deleting the token
+        try {
+            await auth.api.resetPassword({
+                body: {
+                    newPassword: password,
+                    token: token,
+                },
+            });
+        } catch (authError: any) {
+            console.error("[reset-password] Auth API error:", authError);
+            return NextResponse.json(
+                { error: "Invalid or expired reset link" },
+                { status: 400 }
+            );
         }
 
-        // 2. Update the password using Better Auth's setPassword API
-        // This ensures the new password is hashed exactly as Better Auth expects
+        // Invalidate all sessions for security
         const user = await prisma.user.findUnique({ where: { email } });
-        if (!user) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        if (user) {
+            await prisma.session.deleteMany({ where: { userId: user.id } });
         }
-
-        await auth.api.setPassword({
-            body: {
-                userId: user.id,
-                newPassword: password,
-            },
-        });
-
-        // 3. Invalidate all sessions for security
-        await prisma.session.deleteMany({ where: { userId: user.id } });
-
-        // 4. Delete the used verification token
-        await prisma.verification.delete({ where: { id: verification.id } });
 
         return NextResponse.json({ success: true });
     } catch (error) {
