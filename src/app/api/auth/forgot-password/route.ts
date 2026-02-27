@@ -26,9 +26,8 @@ export async function POST(req: NextRequest) {
 
         const user = await prisma.user.findUnique({ where: { email } });
 
-        // Always return success to prevent email enumeration
         if (!user) {
-            return NextResponse.json({ success: true });
+            return NextResponse.json({ error: "Email not registered" }, { status: 404 });
         }
 
         const token = randomBytes(32).toString("hex");
