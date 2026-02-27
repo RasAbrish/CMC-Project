@@ -16,7 +16,7 @@ if (!connectionString) {
 }
 
 let adapter: any;
-// Use neon adapter for production Neon endpoint, otherwise use standard pg adapter
+
 if (connectionString.includes("neon.tech")) {
     adapter = new PrismaNeon({ connectionString });
 } else {

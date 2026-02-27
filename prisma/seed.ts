@@ -30,11 +30,11 @@ async function main() {
             },
         });
 
-        console.log(`✅ Default admin created successfully!`);
+        console.log(` Default admin created successfully!`);
         console.log(`Email: ${adminEmail}`);
         console.log(`Password: ${adminPassword}`);
     } else {
-        console.log(`✅ Admin account already exists.`);
+        console.log(`Admin account already exists.`);
     }
 }
 

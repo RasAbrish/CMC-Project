@@ -17,10 +17,7 @@ interface CreateNotificationOptions {
     link?: string;
 }
 
-/**
- * Creates a notification for every user EXCEPT the actor.
- * Also creates one for the actor themselves if it's a system-level event.
- */
+
 export async function broadcastNotification({
     actorId,
     type,
