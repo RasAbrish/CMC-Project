@@ -36,6 +36,12 @@ A modern, high-performance headless Content Management System built on Next.js 1
 - **Form Handling**: React Hook Form
 - **Schema Validation**: Zod
 
+## Demo Account
+
+You can log in to the dashboard immediately using the default admin credentials:
+- **Email**: `admin@admin.com`
+- **Password**: `admin1234`
+
 ## Getting Started
 
 ### Prerequisites
